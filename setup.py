@@ -51,6 +51,9 @@ setup(name='velruse',
       include_package_data=True,
       zip_safe=False,
       install_requires=requires,
+      dependency_links=[
+          'http://github.com/lmctv/pyramid_ldap/tarball/lmc_integration/#egg=pyramid_ldap-0.2.dev1'
+      ],
       extras_require={
           'docs': docs_extras,
           'testing': testing_extras,
