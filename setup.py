@@ -20,8 +20,13 @@ docs_extras = [
     'docutils',
 ]
 
+ldap_extras = [
+    'pyramid_ldap>=0.2.dev',
+    'deform>=0.9.6'
+]
+
 setup(name='velruse',
-      version='1.0.3',
+      version='1.0.4.dev1',
       description=(
           'Simplifying third-party authentication for web applications.'),
       long_description='',
@@ -49,6 +54,7 @@ setup(name='velruse',
       extras_require={
           'docs': docs_extras,
           'testing': testing_extras,
+          'ldap': ldap_extras,
       },
       entry_points="""
       [paste.app_factory]
