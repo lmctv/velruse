@@ -68,8 +68,6 @@ def add_ldap_login(config,
     Add a LDAP login provider to the application.
     """
 
-    self.connector_name = pyramid_ldap_key
-
     login_path = '/login/%s' % name
     result_path = '/login/%s/result' % name
 
