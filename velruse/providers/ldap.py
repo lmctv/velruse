@@ -54,6 +54,7 @@ def _add_ldap_login_from_settings(config, prefix='velruse.ldap.'):
     p.update('attribute_mappings')
     p.update('host_whitelist')
     p.update('host_blacklist')
+    return
     config.add_ldap_login(**p.kwargs)
 
 
