@@ -136,6 +136,6 @@ class LdapProvider(object):
 def includeme(config):
     config.add_directive('add_ldap_login', add_ldap_login)
 
-    if 'velruse.ldap' in config.registry.settings['pyramid.includes']:
-        _ldap_setup_from_settings(config)
+    if 'velruse.providers.ldap' in config.registry.settings['pyramid.includes']:
+        _add_ldap_login_from_settings(config)
 
