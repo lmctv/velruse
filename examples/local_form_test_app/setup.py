@@ -8,7 +8,7 @@ requires = [
     'requests',
 ]
 
-setup(name='sample_ldapapp',
+setup(name='sample_localform_app',
       version='0.0-dev',
       description='Velruse example provider application',
       packages=find_packages(),
@@ -17,6 +17,6 @@ setup(name='sample_ldapapp',
       install_requires=requires,
       entry_points="""\
       [paste.app_factory]
-      main = sample_ldapapp:main
+      main = sample_localform_app:main
       """,
 )
