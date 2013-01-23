@@ -21,63 +21,6 @@ from velruse.api import (
 from velruse.exceptions import ThirdPartyFailure
 from velruse.settings import ProviderSettings
 
-class FormatInterpolator(str):
-    """An utility class allowing the % operator to format a PEP 3101
-    format string
-
-    >>> f = FormatInterpolator('{one} -> {two}')
-    >>> f % {'one': 1, 'two': 2}
-    '1 -> 2'
-    >>> f % (1,2)
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-      File "interp.py", line 33, in __mod__
-        raise TypeError('format requires a mapping')
-    TypeError: format requires a mapping
-    >>> f % {'one': 1}
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-      File "interp.py", line 22, in __mod__
-        return self.tpl.format(**other)
-    KeyError: 'two'
-    >>> f % {'one': 1, 'two': 2, 'three': 3}
-    '1 -> 2'
-    >>> 
-
-    """
-
-    def __init__(self, template=''):
-        self.tpl = template
-
-    def __str__(self):
-        return self.tpl
-
-    def __repr__(self):
-        return '<FormatInterpolator(%s)>' % self.tpl
-
-    def __nonzero__(self):
-        return self.tpl.__nonzero__()
-
-    def __mod__(self, other):
-
-        if isinstance (other, dict):
-            try:
-                return self.tpl.format(**other)
-            except IndexError:
-                raise TypeError('not enough arguments for format string')
-
-        try:
-            if isinstance(other, tuple):
-                return self.tpl.format(*other)
-            else:
-                return self.tpl.format(str(other))
-
-        except KeyError:
-            raise TypeError('format requires a mapping')
-        except IndexError:
-            raise TypeError('not enough arguments for format string')
-
-
 class LdapAuthOK(AuthenticationComplete):
     """LDAP auth complete"""
     def __init__(self, profile=None,
