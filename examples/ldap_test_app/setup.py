@@ -1,9 +1,7 @@
 from setuptools import setup, find_packages
 
 requires = [
-    'velruse',
-    'pyramid',
-    'pyramid_ldap>=0.2.dev',
+    'velruse[ldap]',
     'waitress',
     'redis',
     'pyramid_debugtoolbar',
