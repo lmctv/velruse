@@ -118,24 +118,137 @@ class LdapProvider(object):
 
         conn = getattr(request, self.connector_key, None)
         if connector is None:
-            raise Exception('connector %s not found in request attribute' % 
+            raise Exception('connector %s not found in request attribute' %
                             self.connector_key)
 
         userentry = conn.authenticate(login, password)
 
         if userentry is not None:
-            return LdapAuthOK(profile=userdata, credentials={},
+            return FormAuthOK(profile=userdata, credentials={},
                               provider_name=self.name,
                               provider_type=self.type, endpoint=endpoint)
 
         log.debug('auth fail')
-        return LdapAuthFail(provider_name=self.name, provider_type=self.type,
+        return FormAuthFail(provider_name=self.name, provider_type=self.type,
                             endpoint=endpoint)
 
 
-def includeme(config):
-    config.add_directive('add_ldap_login', add_ldap_login)
 
-    if 'velruse.providers.ldap' in config.registry.settings['pyramid.includes']:
-        _add_ldap_login_from_settings(config)
+def _add_form_login_from_settings(config, prefix='velruse.forms.'):
+    settings = config.registry.settings
+    p = ProviderSettings(settings, prefix)
+    p.update('name')
+    p.update('attribute_mappings')
+    p.update('host_whitelist')
+    p.update('host_blacklist')
+    p.update('backend')
+    print p
+    return
+    config.add_login_form(**p.kwargs)
+
+def _add_
+
+
+def _add_ldap_server_from_settings(config, prefix='velruse.ldapserver'):
+    settings = config.registry.settings
+    p = ProviderSettings(settings, prefix)
+
+def _add_ldap_backends_from_settings(config):
+
+    backends = config.registry.settings.get('velruse.ldap_backends', None)
+    if backends:
+        for i in backends:
+            p = ProviderSettings(settings, prefix='velruse.%s.' % i)
+            print i
+
+
+def _setup_query_from_setting(config, prefix):
+
+    parm_names = ('templater', 'filter_tmpl', 'scope', 'cache_period',
+                  'search_after_bind', )
+
+    settings = config.registry.settings
+
+    _parms = {}
+
+    settings = config.registry.settings
+
+    for key in parm_names:
+        _parms[key] = settings.get('%s.%s'(prefix, key), '').strip()
+
+    extractor = ConnectionData()
+
+    try:
+        data = extractor.deserialize(_parms)
+        logger.debug('data=%r' % data)
+
+    except:
+        logger.debug('raw_data=%r' % _parms)
+
+
+def _setup_connection_from_settings(config, prefix):
+
+    parm_names = ('uri', 'bind', 'passwd', 'pool_size', 'retry_max'
+                  'retry_delay', 'use_tls', 'timeout', 'use_pool',)
+
+    _parms = {}
+
+    settings = config.registry.settings
+
+    for key in parm_names:
+        _parms[key] = settings.get('%s.%s'(prefix, key), '').strip()
+
+    extractor = ConnectionData()
+
+    try:
+        data = extractor.deserialize(_parms)
+        logger.debug('data=%r' % data)
+
+    except:
+        logger.debug('raw_data=%r' % _parms)
+
+
+def attach_named_backend(config, cls_setup, name='backend', *args, **args):
+
+    connector = cls_setup( *args, **args)
+
+    def get_connector(request):
+        registry = request.registry
+        return connector
+
+    
+
+def enable_form_backend(config, factory = None, name = ''):
+
+        if name:
+            obj_name = '_'.join(('velruse_form_backend', name))
+            intr_name = '_'.join(('velruse_form', context))
+            act_name = '-'.join(('velruse-form-back-create', name))
+
+        else:
+            obj_name = 'velruse_form_backend'
+            intr_name = 'velruse_form'
+            act_name = 'velruse-form-back-create'
+
+
+    key = 'velruse.form_bk.'
+
+    def get_backend(request):
+        registry = request.registry
+        return backend
+    
+
+def enable_form_backends(config):
+
+    backends = config.registry.settings.get('velruse.form_backends')
+    if backends:
+        pass
+
+
+
+def includeme(config):
+    config.add_directive('add_form_login', add_form_login)
+
+    if 'velruse.providers.localform' in config.registry.settings['pyramid.includes']:
+        _add_form_login_from_settings(config)
 
