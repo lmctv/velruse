@@ -4,7 +4,7 @@ context
 
     >>> import formatters
     >>> mask = "test %(replaced)s"
-    >>> mask % {"replaced": "output string"} 
+    >>> mask % {"replaced": "output string"}
     'test output string'
     >>> mask = formatters.format("{one} -> {two}")
     >>> mask % {'one': 1, 'two': 2}
@@ -18,7 +18,7 @@ context
 import string
 
 class FormatInterpolator(str):
-    """An utility class allowing the % operator to format a PEP 3101
+    """A utility class allowing the % operator to format a PEP 3101
     format string
 
     >>> f = FormatInterpolator('{one} -> {two}')
@@ -59,7 +59,7 @@ class FormatInterpolator(str):
     >>> f = FormatInterpolator('{one} -> {two}')
     >>> True if f else False
     True
-    >>> 
+    >>>
     >>> f = FormatInterpolator('')
     >>> True if f else False
     False
@@ -97,10 +97,10 @@ class FormatInterpolator(str):
         except IndexError:
             raise TypeError('not enough arguments for format string')
 
-format = FormatInterpolator
-
 class TemplateInterpolator(str):
-    """
+    """A utility class allowing the % operator to format a PEP 292
+    string template
+
     >>> f = TemplateInterpolator("${three} <=> ${four}")
     >>> f
     <TemplateInterpolator('${three} <=> ${four}')>
@@ -157,4 +157,13 @@ class TemplateInterpolator(str):
             return self.tpl.substitute(**other)
         raise TypeError('format requires a mapping')
 
-template = TemplateInterpolator
+def template(tpl=''):
+    return TemplateInterpolator(tpl)
+
+def format(tpl=''):
+    return FormatInterpolator(tpl)
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod(exclude_empty=True)
+
