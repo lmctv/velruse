@@ -21,8 +21,12 @@ from velruse.api import (
 from velruse.exceptions import ThirdPartyFailure
 from velruse.settings import ProviderSettings
 
-class LdapAuthOK(AuthenticationComplete):
-    """LDAP auth complete"""
+from pyramid.settings import aslist
+
+from .validators import ConnectionData, QueryData, null
+
+class FormAuthOK(AuthenticationComplete):
+    """USER auth complete"""
     def __init__(self, profile=None,
                  credentials=None,
                  provider_name=None,
@@ -35,8 +39,8 @@ class LdapAuthOK(AuthenticationComplete):
         if endpoint:
             self.endpoint = endpoint
 
-class LdapAuthFail(AuthenticationDenied):
-    """LDAP auth denied"""
+class FormAuthFail(AuthenticationDenied):
+    """USER auth denied"""
     def __init__(self, reason=None,
                  provider_name=None,
                  provider_type=None,
@@ -47,31 +51,20 @@ class LdapAuthFail(AuthenticationDenied):
         if endpoint:
             self.endpoint = endpoint
 
-def _add_ldap_login_from_settings(config, prefix='velruse.ldap.'):
-    settings = config.registry.settings
-    p = ProviderSettings(settings, prefix)
-    p.update('name')
-    p.update('attribute_mappings')
-    p.update('host_whitelist')
-    p.update('host_blacklist')
-    return
-    config.add_ldap_login(**p.kwargs)
 
-
-def add_ldap_login(config,
+def add_form_login(config,
                       attribute_mappings= None,
                       host_whitelist = None,
                       host_blacklist = None,
-                      connector_key = 'ldap_connector',
-                      name='ldap'):
+                      name='form_login'):
     """
-    Add a LDAP login provider to the application.
+    Add a local form login provider to the application.
     """
 
-    login_path = '/login/%s' % name
-    result_path = '/login/%s/result' % name
+    login_path = '/%s/login' % name
+    result_path = '/%s/results' % name
 
-    provider = LdapProvider(name, login_path, result_path,
+    provider = FormProvider(name, login_path, result_path,
                              attribute_mappings=attribute_mappings,
                              host_whitelist=host_whitelist,
                              host_blacklist=host_blacklist,
@@ -81,7 +74,7 @@ def add_ldap_login(config,
     config.add_route(provider.login_route, login_path)
     config.add_view(provider, attr='login', route_name=provider.login_route,
                     permission=NO_PERMISSION_REQUIRED,
-                    renderer='velruse:templates/ldap_login.mako')
+                    renderer='velruse:templates/form_login.mako')
     config.add_route(provider.result_route, result_path,
                      use_global_views=True,
                      factory=provider.result)
@@ -89,7 +82,7 @@ def add_ldap_login(config,
     register_provider(config, name, provider)
 
 
-class LdapProvider(object):
+class FormProvider(object):
 
     def __init__(self, name, attribute_mappings=None,
                     host_whitelist=None, host_blacklist=None,
@@ -98,7 +91,7 @@ class LdapProvider(object):
         self.name = name
         self.connector_key=connector_key
         self.uri = uri
-        self.type = 'pyramid_ldap'
+        self.type = 'velruse_form'
         self.login_route = '%s/login' % self.name
         self.result_route = '%s/result' % self.name
 
@@ -108,9 +101,9 @@ class LdapProvider(object):
         parms['endpoint'] = request.POST.get('endpoint', '')
         parms['auth_session_key'] = request.POST.get('auth_session_key','')
         return parms
-        
+
     def result(self, request):
-        """Initiate a LDAP login"""
+        """Initiate a User login"""
         login = request.POST.get('login', '')
         password = request.POST.get('password', '')
         endpoint = request.POST.get('endpoint', '')
@@ -145,8 +138,6 @@ def _add_form_login_from_settings(config, prefix='velruse.forms.'):
     print p
     return
     config.add_login_form(**p.kwargs)
-
-def _add_
 
 
 def _add_ldap_server_from_settings(config, prefix='velruse.ldapserver'):
@@ -208,9 +199,9 @@ def _setup_connection_from_settings(config, prefix):
         logger.debug('raw_data=%r' % _parms)
 
 
-def attach_named_backend(config, cls_setup, name='backend', *args, **args):
+def attach_named_backend(config, cls_setup, name='backend', *args, **kw):
 
-    connector = cls_setup( *args, **args)
+    connector = cls_setup( *args, **kw)
 
     def get_connector(request):
         registry = request.registry
@@ -220,15 +211,15 @@ def attach_named_backend(config, cls_setup, name='backend', *args, **args):
 
 def enable_form_backend(config, factory = None, name = ''):
 
-        if name:
-            obj_name = '_'.join(('velruse_form_backend', name))
-            intr_name = '_'.join(('velruse_form', context))
-            act_name = '-'.join(('velruse-form-back-create', name))
+    if name:
+        obj_name = '_'.join(('velruse_form_backend', name))
+        intr_name = '_'.join(('velruse_form', context))
+        act_name = '-'.join(('velruse-form-back-create', name))
 
-        else:
-            obj_name = 'velruse_form_backend'
-            intr_name = 'velruse_form'
-            act_name = 'velruse-form-back-create'
+    else:
+        obj_name = 'velruse_form_backend'
+        intr_name = 'velruse_form'
+        act_name = 'velruse-form-back-create'
 
 
     key = 'velruse.form_bk.'
