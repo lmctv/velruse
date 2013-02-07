@@ -3,12 +3,11 @@ from setuptools import setup, find_packages
 requires = [
     'velruse[ldap]',
     'waitress',
-    'redis',
     'pyramid_debugtoolbar',
     'requests',
 ]
 
-setup(name='sample_localform_app',
+setup(name='local_form_test_app',
       version='0.0-dev',
       description='Velruse example provider application',
       packages=find_packages(),

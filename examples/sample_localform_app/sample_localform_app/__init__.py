@@ -5,7 +5,7 @@ from logging import getLogger
 
 log = getLogger(__name__)
 
-@view_config(route_name='login', renderer='myapp:templates/login.mako')
+@view_config(route_name='login', renderer='sample_localform_app:templates/login.mako')
 def login(request):
     return {}
 
@@ -17,7 +17,7 @@ def logged_in(request):
     payload = {'format': 'json', 'token': token}
     response = requests.get('http://localhost:8521/auth_info', params=payload)
     log.debug(response)
-    
+
     return {'result': response.json()}
 
 
