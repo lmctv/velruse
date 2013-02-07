@@ -135,9 +135,7 @@ def _add_form_login_from_settings(config, prefix='velruse.forms.'):
     p.update('host_whitelist')
     p.update('host_blacklist')
     p.update('backend')
-    print p
-    return
-    config.add_login_form(**p.kwargs)
+    config.add_form_login(**p.kwargs)
 
 
 def _add_ldap_server_from_settings(config, prefix='velruse.ldapserver'):
@@ -207,7 +205,7 @@ def attach_named_backend(config, cls_setup, name='backend', *args, **kw):
         registry = request.registry
         return connector
 
-    
+
 
 def enable_form_backend(config, factory = None, name = ''):
 
@@ -227,7 +225,7 @@ def enable_form_backend(config, factory = None, name = ''):
     def get_backend(request):
         registry = request.registry
         return backend
-    
+
 
 def enable_form_backends(config):
 

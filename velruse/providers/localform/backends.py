@@ -1,4 +1,4 @@
-"""LDAP authentication views"""
+"""Local authentication backends"""
 import logging
 
 log = logging.getLogger(__name__)
@@ -25,13 +25,15 @@ from pyramid.settings import aslist
 
 from .validators import ConnectionData, QueryData, null
 
+from pyramid_ldap import (ldap_setup, ldap_set_login_query,
+                          ldap_set_groups_query, get_ldap_connector)
 
 class AllOk(object):
 
     def __init__(self, userid=None, password=None):
         pass
 
-    def authenticate(self, userid=None, password=None):
+    def authenticate(self, request, userid, password):
         return True
 
 class FixedCredentials(AllOk):
@@ -40,13 +42,21 @@ class FixedCredentials(AllOk):
         self.userid = userid
         self.password = password
 
-    def authenticate(self, userid=None, password=None):
+    def authenticate(self, request, userid, password):
         return self.userid == userid and self.password == password
 
 class AllFail(AllOk):
 
-    def authenticate(self, userid, password):
+    def authenticate(self, request, userid, password):
         return False
+
+class LDAP(object):
+
+    def __init__(self, name=''):
+        self.context_name = name
+
+    def authenticate(self, request, userid, password):
+        connector = get_ldap_connector(request, context=self.context_name)
 
 
 
@@ -59,108 +69,21 @@ def alwaysfail(config, name=''):
 def fixedcreds(config, name=''):
     pass
 
-def pyramid_ldap(config, name=''):
+def pyramid_ldap(config, uri, bind=None, passwd=None,
+                         pool_size=10, retry_max=3, retry_delay=.1,
+                         use_tls=False, timeout=-1, use_pool=True,
+                         base_dn='', filter_tmpl='',
+                         scope=ldap.SCOPE_ONELEVEL, cache_period=0,
+                         search_after_bind=False,
+                         name=''):
+
     pass
 
 
-"""
-==========
-LDAP setup
-==========
-"""
 
-def _add_ldap_server_from_settings(config, prefix='velruse.ldapserver'):
-    settings = config.registry.settings
-    p = ProviderSettings(settings, prefix)
-
-def _add_ldap_backends_from_settings(config):
-
-    backends = config.registry.settings.get('velruse.ldap_backends', None)
-    if backends:
-        for i in backends:
-            p = ProviderSettings(settings, prefix='velruse.%s.' % i)
-            print i
-
-
-def _setup_query_from_setting(config, prefix):
-
-    parm_names = ('templater', 'filter_tmpl', 'scope', 'cache_period',
-                  'search_after_bind', )
-
-    settings = config.registry.settings
-
-    _parms = {}
-
-    settings = config.registry.settings
-
-    for key in parm_names:
-        _parms[key] = settings.get('%s.%s'(prefix, key), '').strip()
-
-    extractor = ConnectionData()
-
-    try:
-        data = extractor.deserialize(_parms)
-        logger.debug('data=%r' % data)
-
-    except:
-        logger.debug('raw_data=%r' % _parms)
-
-
-def _setup_connection_from_settings(config, prefix):
-
-    parm_names = ('uri', 'bind', 'passwd', 'pool_size', 'retry_max'
-                  'retry_delay', 'use_tls', 'timeout', 'use_pool',)
-
-    _parms = {}
-
-    settings = config.registry.settings
-
-    for key in parm_names:
-        _parms[key] = settings.get('%s.%s'(prefix, key), '').strip()
-
-    extractor = ConnectionData()
-
-    try:
-        data = extractor.deserialize(_parms)
-        logger.debug('data=%r' % data)
-
-    except:
-        logger.debug('raw_data=%r' % _parms)
-
-
-def attach_named_backend(config, cls_setup, name='backend', *args, **args):
-
-    connector = cls_setup( *args, **args)
-
-    def get_connector(request):
-        registry = request.registry
-        return connector
-
-    
-
-def enable_form_backend(config, factory = None, name = ''):
-
-        if name:
-            obj_name = '_'.join(('velruse_form_backend', name))
-            intr_name = '_'.join(('velruse_form', context))
-            act_name = '-'.join(('velruse-form-back-create', name))
-
-        else:
-            obj_name = 'velruse_form_backend'
-            intr_name = 'velruse_form'
-            act_name = 'velruse-form-back-create'
-
-
-    key = 'velruse.form_bk.'
-
-    def get_backend(request):
-        registry = request.registry
-        return backend
-    
-
-def enable_form_backends(config):
-
-    backends = config.registry.settings.get('velruse.form_backends')
-    if backends:
-        pass
-
+def includeme(config):
+    """Setup configurator methods for localform authentication backends"""
+    config.add_directive('local_ok_backend_setup', alwaysok)
+    config.add_directive('local_fail_backend_setup', alwaysfail)
+    config.add_directive('local_fixedcreds_backend_setup', fixedcreds)
+    config.add_directive('local_ldap_backend_setup', pyramid_ldap)
