@@ -22,8 +22,6 @@ docs_extras = [
 
 ldap_extras = [
     'pyramid_ldap>=0.2.dev',
-    'deform>=0.9.6',
-    'pyramid_beaker',
 ]
 
 setup(name='velruse',
