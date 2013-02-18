@@ -28,6 +28,9 @@ class FormatInterpolator(str):
     >>> f % {'one': 1, 'two': 2}
     '1 -> 2'
 
+    >>> f.format(one=1, two=2)
+    '1 -> 2'
+
     >>> f % (1,2)
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
@@ -49,6 +52,9 @@ class FormatInterpolator(str):
     >>> f % (1, 2, 3)
     '1 2 3'
 
+    >>> f.format(1, 2, 3)
+    '1 2 3'
+
     >>> f % (1, 2,)
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
@@ -66,31 +72,22 @@ class FormatInterpolator(str):
 
     """
 
-    def __init__(self, template=''):
-        self.tpl = template
-
-    def __str__(self):
-        return self.tpl
-
     def __repr__(self):
-        return '<FormatInterpolator(%r)>' % self.tpl
-
-    def __nonzero__(self):
-        return bool(self.tpl)
+        return '<FormatInterpolator(%s)>' % str.__repr__(self)
 
     def __mod__(self, other):
 
         if isinstance (other, dict):
             try:
-                return self.tpl.format(**other)
+                return self.format(**other)
             except IndexError:
                 raise TypeError('not enough arguments for format string')
 
         try:
             if isinstance(other, tuple):
-                return self.tpl.format(*other)
+                return self.format(*other)
             else:
-                return self.tpl.format(str(other))
+                return self.format(str(other))
 
         except KeyError:
             raise TypeError('format requires a mapping')
