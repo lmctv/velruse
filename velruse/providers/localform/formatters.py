@@ -108,6 +108,12 @@ class TemplateInterpolator(str):
     >>> f % {'three': 3, 'four': 4}
     '3 <=> 4'
 
+    >>> f.safe_substitute({'three': 3, 'four': 4})
+    '3 <=> 4'
+
+    >>> f.substitute({'three': 3}, four=4)
+    '3 <=> 4'
+
     >>> f % (1,2)
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
@@ -156,6 +162,12 @@ class TemplateInterpolator(str):
         if isinstance (other, dict):
             return self.tpl.substitute(**other)
         raise TypeError('format requires a mapping')
+
+    def substitute(self, mapping=None, **kws):
+        return self.tpl.substitute(mapping, **kws)
+
+    def safe_substitute(self, mapping=None, **kws):
+        return self.tpl.safe_substitute(mapping, **kws)
 
 def template(tpl=''):
     return TemplateInterpolator(tpl)
