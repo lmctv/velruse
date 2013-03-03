@@ -2,14 +2,14 @@
 and py:method:``str.format`` template syntax in a string interpolation
 context
 
-    >>> import formatters
+    >>> import interpolators
     >>> mask = "test %(replaced)s"
     >>> mask % {"replaced": "output string"}
     'test output string'
-    >>> mask = formatters.format("{one} -> {two}")
+    >>> mask = interpolators.format("{one} -> {two}")
     >>> mask % {'one': 1, 'two': 2}
     '1 -> 2'
-    >>> mask = formatters.template("${three} <=> ${four}")
+    >>> mask = interpolators.template("${three} <=> ${four}")
     >>> mask % {'three': 3, 'four': 4}
     '3 <=> 4'
 
