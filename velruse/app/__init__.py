@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 def auth_complete_view(context, request):
-    endpoint = request.registry.settings.get('endpoint')
+    endpoint = request.session.get('endpoint') or request.registry.settings.get('endpoint')
     token = generate_token()
     storage = request.registry.velruse_store
     if 'birthday' in context.profile:
@@ -33,7 +33,7 @@ def auth_complete_view(context, request):
 
 
 def auth_denied_view(context, request):
-    endpoint = request.registry.settings.get('endpoint')
+    endpoint = request.session.get('endpoint') or request.registry.settings.get('endpoint')
     token = generate_token()
     storage = request.registry.velruse_store
     error_dict = {

@@ -23,53 +23,169 @@ from velruse.settings import ProviderSettings
 
 from pyramid.settings import aslist
 
-from .validators import ConnectionData, QueryData, null
+from .validators import ConnectionData, QueryData, LdapData, null
 
 from pyramid_ldap import (ldap_setup, ldap_set_login_query,
-                          ldap_set_groups_query, get_ldap_connector)
+                          get_ldap_connector_name)
 
-class AllOk(object):
+import ldap
 
-    def __init__(self, userid=None, password=None):
+class FormatInterpolator(str):
+    """A utility class allowing the % operator to format a PEP 3101
+    format string
+
+    >>> f = FormatInterpolator('{one} -> {two}')
+    >>> f
+    <FormatInterpolator('{one} -> {two}')>
+
+    >>> f % {'one': 1, 'two': 2}
+    '1 -> 2'
+
+    >>> f.format(one=1, two=2)
+    '1 -> 2'
+
+    >>> f % (1,2)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "interp.py", line 33, in __mod__
+        raise TypeError('format requires a mapping')
+    TypeError: format requires a mapping
+
+    >>> f % {'one': 1}
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "interp.py", line 22, in __mod__
+        return self.tpl.format(**other)
+    KeyError: 'two'
+
+    >>> f % {'one': 1, 'two': 2, 'three': 3}
+    '1 -> 2'
+
+    >>> f = FormatInterpolator('{} {} {}')
+    >>> f % (1, 2, 3)
+    '1 2 3'
+
+    >>> f.format(1, 2, 3)
+    '1 2 3'
+
+    >>> f % (1, 2,)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "formatters.py", line 86, in __mod__
+        raise TypeError('not enough arguments for format string')
+    TypeError: not enough arguments for format string
+
+    >>> f = FormatInterpolator('{one} -> {two}')
+    >>> True if f else False
+    True
+    >>>
+    >>> f = FormatInterpolator('')
+    >>> True if f else False
+    False
+
+    """
+
+    def __repr__(self):
+        return '<FormatInterpolator(%s)>' % str.__repr__(self)
+
+    def __mod__(self, other):
+
+        if isinstance (other, dict):
+            try:
+                return self.format(**other)
+            except IndexError:
+                raise TypeError('not enough arguments for format string')
+
+        try:
+            if isinstance(other, tuple):
+                return self.format(*other)
+            else:
+                return self.format(str(other))
+
+        except KeyError:
+            raise TypeError('format requires a mapping')
+        except IndexError:
+            raise TypeError('not enough arguments for format string')
+
+
+def _activity_identifier(base_identifier, name=''):
+    if name:
+        return '-'.join((base_identifier, name))
+    else:
+        return base_identifier
+
+def _registry_identifier(base_identifier, name=''):
+    if name:
+        return '_'.join((base_identifier, name))
+    else:
+        return base_identifier
+
+class AlwaysOk(object):
+
+    def __init__(self, **kw):
         pass
 
     def authenticate(self, request, userid, password):
-        return True
+        return {'cf':'xyxyx'}
 
-class FixedCredentials(AllOk):
+class FixedCredentials(AlwaysOk):
 
-    def __init__(self, userid=None, password=None):
-        self.userid = userid
-        self.password = password
-
-    def authenticate(self, request, userid, password):
-        return self.userid == userid and self.password == password
-
-class AllFail(AllOk):
+    def __init__(self, **kw):
+        self.userid = kw.get('userid','')
+        self.password = kw.get('password','')
 
     def authenticate(self, request, userid, password):
-        return False
+        if self.userid == userid and self.password == password:
+            return {'cf': "%s's cf" % s}
+        return {}
 
-class LDAP(object):
-
-    def __init__(self, name=''):
-        self.context_name = name
+class AlwaysFail(AlwaysOk):
 
     def authenticate(self, request, userid, password):
-        connector = get_ldap_connector(request, context=self.context_name)
+        return {}
+
+def _register_internal_backend(config, cls, name, **parms):
+
+    conn_name = _registry_identifier('velruse_auth_connector', name)
+    intr_name = _registry_identifier('velruse_auth', name)
+    act_name = _activity_identifier('velruse-auth', name)
 
 
+    def get_connector(request):
+        registry = request.registry
+        connector = cls(**parms)
+        return connector
 
-def alwaysok(config, name=''):
-    pass
+    config.set_request_property(get_connector, conn_identif, reify=True)
 
-def alwaysfail(config, name=''):
-    pass
+    intr = config.introspectable(
+        '%s setup' % intr_identif,
+        None,
+        pprint.pformat(**kw),
+        '%s setup' % intr_identif,
+        )
 
-def fixedcreds(config, name=''):
-    pass
+    config.action(act_identif, None, introspectables=(intr,))
+    return conn_name
 
-def pyramid_ldap(config, uri, bind=None, passwd=None,
+def alwaysok(config, name='alwaysok', **kw):
+    return _register_internal_backend(config, AlwaysOk, name, **kw)
+
+def alwaysfail(config, name='alwaysfail', **kw):
+    return _register_internal_backend(config, AlwaysFail, name, **kw)
+
+def fixedcreds(config, name='fixedcreds', **kw):
+    return _register_internal_backend(config, FixedCredentials, name, **kw)
+
+def ldapauth(config, uri, base_dn, filter_tmpl, name='ldap',
+             connection_parms=None, query_parms=None):
+
+    connection_parms = connection_parms or {}
+    query_parms = query_parms or {}
+    connection_parms['context'] = name
+    query_parms['context'] = name
+
+    """ ldap_setup(config, uri, bind=None, passwd=None,
                          pool_size=10, retry_max=3, retry_delay=.1,
                          use_tls=False, timeout=-1, use_pool=True,
                          base_dn='', filter_tmpl='',
@@ -77,13 +193,15 @@ def pyramid_ldap(config, uri, bind=None, passwd=None,
                          search_after_bind=False,
                          name=''):
 
-    pass
+    
+        ldap_set_login_query(config, base_dn, filter_tmpl, 
+                          scope=ldap.SCOPE_ONELEVEL, cache_period=0,
+                          search_after_bind=False, context='')
+                          get_ldap_connector_name
+    """
 
+    ldap_setup(config, uri, **connection_parms)
+    ldap_set_login_query(config, base_dn, filter_tmpl, **query_parms)
 
+    return get_ldap_connector_name(name)
 
-def includeme(config):
-    """Setup configurator methods for localform authentication backends"""
-    config.add_directive('local_ok_backend_setup', alwaysok)
-    config.add_directive('local_fail_backend_setup', alwaysfail)
-    config.add_directive('local_fixedcreds_backend_setup', fixedcreds)
-    config.add_directive('local_ldap_backend_setup', pyramid_ldap)

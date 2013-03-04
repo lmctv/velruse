@@ -2,6 +2,8 @@ import colander
 
 import logging
 
+from . import interpolators
+
 try:
     import ldap
 except ImportError:  # pragma: no cover
@@ -33,8 +35,11 @@ class LdapScope(colander.GlobalObject):
         super(LdapScope, self).__init__(ldap)
 
     def deserialize(self, node, cstruct):
-        cstr2 = self._ldapScopes.get(cstruct, cstruct)
-        return super(LdapScope, self).deserialize(node, cstr2)
+        if type(cstruct) == int:
+            return cstruct
+        else:
+            cstr2 = self._ldapScopes.get(cstruct, cstruct)
+            return super(LdapScope, self).deserialize(node, cstr2)
 
 class PrintingString(colander.String):
     """ A non blank string """
@@ -160,7 +165,7 @@ class Schema(colander.Schema):
     schema_type = ForgivingMapping
 
 class ConnectionData(Schema):
-    """ Connection parameters schema """
+    """ Connection parameters schema"""
     uri = colander.SchemaNode(colander.String())
     bind = colander.SchemaNode(PrintingString(), missing=null)
     passwd = colander.SchemaNode(PrintingString(), missing=null)
@@ -172,13 +177,12 @@ class ConnectionData(Schema):
     use_pool = colander.SchemaNode(Boolean(), missing=null)
 
 class QueryData(Schema):
-    """ Query parameters schema """
+    """ Query parameters schema"""
+    base_dn = colander.SchemaNode(PrintingString())
     filter_tmpl = colander.SchemaNode(PrintingString(), missing=null)
     scope = colander.SchemaNode(LdapScope(), missing=null)
     cache_period = colander.SchemaNode(colander.Float(), missing=null)
     search_after_bind = colander.SchemaNode(Boolean(), missing=null)
 
-    def validator(self, node, cstruct):
-        if not ('filter_tmpl' in cstruct or 'entry_tmpl' in cstruct):
-            raise colander.Invalid("At least one of filter_tmpl "
-                                   "or entry_tmpl must be present")
+class LdapData(ConnectionData, QueryData):
+    """ All in one LDAP configuration"""
