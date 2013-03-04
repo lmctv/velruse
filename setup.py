@@ -22,6 +22,7 @@ docs_extras = [
 
 ldap_extras = [
     'pyramid_ldap>=0.2.dev',
+    'colander',
 ]
 
 setup(name='velruse',
