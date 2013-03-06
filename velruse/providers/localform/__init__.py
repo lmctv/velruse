@@ -111,6 +111,7 @@ class FormProvider(object):
         parms['form_submitted'] = request.POST.get('form.submitted','')
 
         if parms['form_submitted'] != request.session.get_csrf_token():
+            log.debug('%s != %s' % (parms['form_submitted'], request.session.get_csrf_token()))
             return FormAuthFail(provider_name=self.name,
                                 provider_type=self.type)
 
