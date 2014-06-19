@@ -2,6 +2,8 @@
 import logging
 
 CFG_PREFIX = 'velruse.providers.localform'
+FORM_RENDERER = 'velruse:providers/localform/templates/form_login.mako'
+FORM_STATIC_ASSETS = 'velruse:providers/localform/static_assets/'
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +48,10 @@ def add_form_login(config,
                       host_whitelist=None,
                       host_blacklist=None,
                       connector_key=None,
-                      name='form_login'):
+                      name='form_login',
+                      renderer=FORM_RENDERER,
+                      static_assets=FORM_STATIC_ASSETS,
+                    ):
     """
     Add a local form login provider to the application.
     """
@@ -54,17 +59,18 @@ def add_form_login(config,
     login_path = '/login/%s' % name
     result_path = '/login/%s/result' % name
 
-    provider = FormProvider(name, 
+    provider = FormProvider(name,
                              attribute_mapper=attribute_mapper,
                              host_whitelist=host_whitelist,
                              host_blacklist=host_blacklist,
-                             connector_key=connector_key
+                             connector_key=connector_key,
+                             static_assets=static_assets,
                             )
 
     config.add_route(provider.login_route, login_path)
     config.add_view(provider, attr='login', route_name=provider.login_route,
                     permission=NO_PERMISSION_REQUIRED,
-                    renderer='velruse:providers/localform/templates/form_login.mako')
+                    renderer=renderer)
     config.add_route(provider.callback_route, result_path,
                      use_global_views=True, factory=provider.result)
 
@@ -73,11 +79,13 @@ def add_form_login(config,
 
 class FormProvider(object):
 
-    def __init__(self, name, 
+    def __init__(self, name,
                        attribute_mapper=None,
-                       host_whitelist=None, 
+                       host_whitelist=None,
                        host_blacklist=None,
-                       connector_key=None):
+                       connector_key=None,
+                       static_assets=None,
+                ):
 
         self.name = name
         self.type = 'velruse_form'
@@ -85,10 +93,11 @@ class FormProvider(object):
         self.callback_route = 'velruse.form-%s-callback' % self.name
         self.connector_key = connector_key
         self.attribute_mapper = attribute_mapper
+        self.static_assets=static_assets
 
     def login(self, request):
         """Show a login form to the user"""
-        parms = {}
+        parms = {'static_assets': self.static_assets}
         parms['endpoint'] = request.POST.get('endpoint', '')
         log.debug('endpoint: %s' % parms['endpoint'] )
         parms['auth_session_key'] = request.POST.get('auth_session_key','')
@@ -158,6 +167,8 @@ def _setup_form_from_settings(config, name=''):
     p.update('backend')
     p.update('consumers')
     p.update('attribute_mappings')
+    p.update('renderer')
+    p.update('static_assets')
 
     _setup_connection_from_settings(config, name=p['backend'])
     _setup_query_from_setting(config, name=p['backend'])
