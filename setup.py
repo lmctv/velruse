@@ -26,7 +26,7 @@ ldap_extras = [
 ]
 
 setup(name='velruse',
-      version='1.0.4.dev1',
+      version='1.0.4.dev2',
       description=(
           'Simplifying third-party authentication for web applications.'),
       long_description='',
